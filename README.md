@@ -10,4 +10,21 @@ To compile and run the application locally, use the following command:
 mvn spring-boot:run
 ```
 
-The application will start on `http://localhost:8080`.
+
+## How to Build and Run with Docker
+
+You can build and run the application using Docker:
+
+### 1. Build the Docker image
+
+```bash
+docker build -t doc2faq .
+```
+
+### 2. Run the Docker container
+
+```bash
+docker run -p 8080:8080 --name doc2faq doc2faq
+```
+
+The application will be available at `http://localhost:8080`.
