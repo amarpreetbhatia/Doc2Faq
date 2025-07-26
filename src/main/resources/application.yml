@@ -1,0 +1,56 @@
+server:
+  port: 8080
+  shutdown: graceful
+
+spring:
+  application:
+    name: doc2faq
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+  info:
+    env:
+      enabled: true
+
+logging:
+  level:
+    com.example.doc2faq: INFO
+    org.springframework: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+
+---
+spring:
+  config:
+    activate:
+      on-profile: docker
+
+logging:
+  level:
+    root: INFO
+    com.example.doc2faq: DEBUG
+
+---
+spring:
+  config:
+    activate:
+      on-profile: native
+
+logging:
+  level:
+    root: WARN
+    com.example.doc2faq: INFO
+
+server:
+  tomcat:
+    threads:
+      max: 50
+      min-spare: 5

@@ -20,12 +20,22 @@
 
     <properties>
         <java.version>17</java.version>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <spring-boot.version>3.2.0</spring-boot.version>
+        <native.maven.plugin.version>0.9.28</native.maven.plugin.version>
+        <jib.maven.plugin.version>3.4.0</jib.maven.plugin.version>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
         <dependency>
@@ -40,7 +50,167 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <executable>true</executable>
+                    <layers>
+                        <enabled>true</enabled>
+                    </layers>
+                </configuration>
+            </plugin>
+
+            <!-- Jib plugin for Docker image creation -->
+            <plugin>
+                <groupId>com.google.cloud.tools</groupId>
+                <artifactId>jib-maven-plugin</artifactId>
+                <version>${jib.maven.plugin.version}</version>
+                <configuration>
+                    <from>
+                        <image>eclipse-temurin:17-jre-alpine</image>
+                    </from>
+                    <to>
+                        <image>doc2faq:latest</image>
+                    </to>
+                    <container>
+                        <ports>
+                            <port>8080</port>
+                        </ports>
+                        <environment>
+                            <SPRING_PROFILES_ACTIVE>docker</SPRING_PROFILES_ACTIVE>
+                        </environment>
+                        <creationTime>USE_CURRENT_TIMESTAMP</creationTime>
+                    </container>
+                </configuration>
+            </plugin>
+
+            <!-- JLink plugin for custom JRE -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jlink-plugin</artifactId>
+                <version>3.1.0</version>
+                <configuration>
+                    <runtimeImage>${project.build.directory}/jre</runtimeImage>
+                    <options>
+                        <option>--strip-debug</option>
+                        <option>--compress=2</option>
+                        <option>--no-header-files</option>
+                        <option>--no-man-pages</option>
+                    </options>
+                    <modulePaths>
+                        <modulePath>${java.home}/jmods</modulePath>
+                    </modulePaths>
+                    <addModules>
+                        <addModule>java.base</addModule>
+                        <addModule>java.logging</addModule>
+                        <addModule>java.xml</addModule>
+                        <addModule>java.desktop</addModule>
+                        <addModule>java.management</addModule>
+                        <addModule>java.security.jgss</addModule>
+                        <addModule>java.instrument</addModule>
+                        <addModule>jdk.unsupported</addModule>
+                    </addModules>
+                </configuration>
+            </plugin>
+
+            <!-- Assembly plugin for distribution packaging -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.6.0</version>
+                <configuration>
+                    <descriptors>
+                        <descriptor>src/assembly/distribution.xml</descriptor>
+                    </descriptors>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <!-- Native compilation profile -->
+        <profile>
+            <id>native</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.graalvm.buildtools</groupId>
+                        <artifactId>native-maven-plugin</artifactId>
+                        <version>${native.maven.plugin.version}</version>
+                        <configuration>
+                            <imageName>doc2faq</imageName>
+                            <mainClass>com.example.doc2faq.Doc2FaqApplication</mainClass>
+                            <buildArgs>
+                                <buildArg>--no-fallback</buildArg>
+                                <buildArg>--enable-http</buildArg>
+                                <buildArg>--enable-https</buildArg>
+                                <buildArg>--install-exit-handlers</buildArg>
+                                <buildArg>-H:+ReportExceptionStackTraces</buildArg>
+                                <buildArg>-H:+AddAllCharsets</buildArg>
+                                <buildArg>-H:IncludeResourceBundles=sun.util.resources.TimeZoneNames</buildArg>
+                            </buildArgs>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>build-native</id>
+                                <goals>
+                                    <goal>compile-no-fork</goal>
+                                </goals>
+                                <phase>package</phase>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- Docker profile -->
+        <profile>
+            <id>docker</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.google.cloud.tools</groupId>
+                        <artifactId>jib-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>dockerBuild</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- JRE bundling profile -->
+        <profile>
+            <id>jre-bundle</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-jlink-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>jlink</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
