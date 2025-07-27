@@ -12,13 +12,26 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
-class StaticContentIntegrationTest {
+class HomePageIntegrationTest {
 
     @Autowired
     private WebApplicationContext webApplicationContext;
 
     @Test
-    void shouldServeIndexHtmlStaticContent() throws Exception {
+    void shouldServeHomePageWithThymeleafTemplate() throws Exception {
+        MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+        
+        mockMvc.perform(get("/"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType("text/html;charset=UTF-8"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Doc2FAQ")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Welcome to the Doc2FAQ application")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("This service helps you generate FAQs from your documents")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Features")));
+    }
+
+    @Test
+    void shouldServeStaticIndexHtmlWhenAccessedDirectly() throws Exception {
         MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
         
         mockMvc.perform(get("/index.html"))

@@ -15,9 +15,11 @@ class HomeControllerTest {
     private MockMvc mockMvc;
 
     @Test
-    void shouldRedirectToIndexPage() throws Exception {
+    void shouldReturnIndexTemplate() throws Exception {
         mockMvc.perform(get("/"))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/index.html"));
+                .andExpect(status().isOk())
+                .andExpect(view().name("index"))
+                .andExpect(model().attribute("title", "Doc2FAQ"))
+                .andExpect(model().attribute("message", "Welcome to the Doc2FAQ application. This service helps you generate FAQs from your documents."));
     }
 }

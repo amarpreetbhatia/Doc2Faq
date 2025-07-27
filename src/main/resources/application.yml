@@ -1,12 +1,19 @@
 server:
   port: 8080
   shutdown: graceful
+  error:
+    whitelabel:
+      enabled: false
 
 spring:
   application:
     name: doc2faq
   lifecycle:
     timeout-per-shutdown-phase: 30s
+  thymeleaf:
+    cache: false
+    prefix: classpath:/templates/
+    suffix: .html
 
 management:
   endpoints:
